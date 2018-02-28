@@ -23,4 +23,20 @@ def repairUnit(unit):
     unit[indices] = c
     return
 
-print(np.min([2,0]))
+
+def evaluate(permutation, distance, flow):
+    return (distance * ((flow[permutation, :])[:, permutation])).sum()
+
+def calculateCost(permutation, distance, flow):
+    cost = 0
+    for i in range(0, distance.shape[0]):
+        for j in range(0, distance.shape[0]):
+            cost += flow[i][j] * distance[int(permutation[i])][int(permutation[j])]
+    return cost
+
+
+x = np.loadtxt('data/flow_12.txt').astype(int)
+y = np.loadtxt('data/distance_12.txt').astype(int)
+z = np.array([3,10,11,2,12,5,6,7,8,1,4,9])
+
+print(calculateCost(z, y, x))

@@ -30,16 +30,21 @@ class Qap:
         self.pop_value = np.zeros(self.pop.shape[0])
         for i in range(self.pop_size):
             np.random.shuffle(self.pop[i, :])
-            '''
-            tmp = np.array(range(self.flow.shape[1]))
-            np.random.shuffle(tmp)
-            self.pop.append(tmp)
-            '''
+        return
+
+    def evaluate_mihau(self):
+
+        for o in range(self.pop.shape[0]):
+            cost = 0
+            for i in range(0, self.flow.shape[0]):
+                for j in range(0, self.flow.shape[0]):
+                    cost += self.flow[i][j] * self.distance[int(self.pop[o][i])][int(self.pop[o][j])]
+            self.pop_value[o] = cost
         return
 
     def evaluate(self):
         for i in range(self.pop.shape[0]):
-            self.pop_value[i] = (self.distance * ((self.flow[self.pop[i], :])[:, self.pop[i]])).sum() / 2
+            self.pop_value[i] = (self.distance * ((self.flow[self.pop[i], :])[:, self.pop[i]])).sum()
         return
 
     def isDone(self, t):
@@ -79,47 +84,48 @@ class Qap:
 
     def crossover(self):
         pattern = np.arange(self.pop.shape[1])
-        def repairUnit(unit):
+
+        def repair_unit(unit):
             indices = np.setdiff1d(pattern, np.unique(unit, return_index=True)[1])
             unit[indices] = np.setdiff1d(pattern, unit)
             return
         parents_indices = np.where((np.random.rand(self.pop.shape[0], 1) > self.p_x))[0]
-        #indexy rodziców - teraz ich sparuj (nieparzystego po prostu odrzuć) i zrób potomstwo : 1 lub 2 - jak jeden to zastąp losowego z rodziców (albo 1 albo 2), jak 2 dzieci to zastąp oboje rodziców
-        #zrób sprawne dobieranie i naprawianie genów dzieci
-        pairs = np.random.choice(parents_indices, (int(parents_indices.shape[0] / 2), 2), False) #indexy par - ostatniego nieparzystego odrzuca
-        children = np.random.randint(1, 3, pairs.shape[0])
+        pairs = np.random.choice(parents_indices, (int(parents_indices.shape[0] / 2), 2), False)
+        children = np.random.randint(0, 2, pairs.shape[0])
         for i in range(pairs.shape[0]):
             m, f = pairs[i]
-            split = np.random.randint(self.pop[m].shape[0])
-            c1 = np.concatenate((self.pop[m][np.arange(split)], self.pop[f][np.arange(start=split, stop=self.pop[m].shape[0])]))
-            repairUnit(c1)
-            self.pop[m] = c1
-            if children[i] == 2:
-                split = np.random.randint(self.pop[m].shape[0])
-                c2 = np.concatenate(
-                    (self.pop[m][0:split], self.pop[f][split : self.pop[m].shape[0]]))
-                repairUnit(c2)
-                self.pop[f] = c2
+            for child in range(children[i]):
+                split = np.random.randint(self.pop[pairs[i][0]].shape[0])
+                c = np.concatenate((self.pop[m][0:split], self.pop[f][split : self.pop[m].shape[0]]))
+                repair_unit(c)
+                self.pop[pairs[i][child]] = c
         return
 
+    def result(self):
+        print('Best: ' + str(test.best_unit[0]+1) + '\t==>\t' + str(test.best_unit[1]))
+        return
 
-flow_matrix = np.array([[0, 3, 0, 2],
+test_flow_matrix = np.array([[0, 3, 0, 2],
                         [3, 0, 0, 1],
                         [0, 0, 0, 4],
                         [2, 1, 4, 0]])
 
-distance_matrix = np.array([[0, 22, 53, 53],
+test_distance_matrix = np.array([[0, 22, 53, 53],
                             [22, 0, 40, 62],
                             [53, 40, 0, 55],
                             [53, 62, 55, 0]])
 
+x = np.array(np.loadtxt('data/flow_12.txt')).astype(int)
+y = np.array(np.loadtxt('data/distance_12.txt')).astype(int)
+
 
 start = time.time()
 
-test = Qap(flow_matrix, distance_matrix, pop_size=100, gen=100, p_x=0.7, p_m=0.01, Tour=5)
+test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=0.01, Tour=4)
 for i in range(25):
     test.main()
-    print('Best: ' + str(test.best_unit[0]) + '\t==>\t' + str(test.best_unit[1]))
+    test.result()
+
 stop = time.time()
 duration = int(round((stop - start)*1000))
 print('Duration: ' + str(duration) + ' ms')
