@@ -5,6 +5,16 @@ a = np.array([1,2,2,4,6,6]) - 1
 r = np.array([6,5,4,4,2,1]) - 1
 x, w, y, z = np.unique(a, return_index=True, return_inverse=True, return_counts=True)
 
+######### OLD FUNCTIONS ##################
+def mutation_old(self):
+    for pos in range(self.pop.shape[0]):
+        if (np.random.random() < self.p_m):
+            a, b = np.random.randint(0, self.pop.shape[1], 2)
+            self.pop[pos][[a, b]] = self.pop[pos][[b, a]]
+    return None
+
+##########################################
+
 def repairUnitq(unit):
     pattern = np.arange(unit.shape[0])
     result = np.array(unit)

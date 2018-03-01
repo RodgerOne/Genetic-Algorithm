@@ -1,6 +1,4 @@
 import numpy as np
-from colorama import Fore
-from colorama import Style
 import time
 '''
     distance - macierz sąsiedztwa pomiędzy lokalizacjami
@@ -11,7 +9,6 @@ import time
     pop_size - rozmiar populacji
     gen - liczba pokoleń
     '''
-
 
 class Qap:
     def __init__(self, distance, flow, p_m, p_x, Tour, pop_size, gen):
@@ -32,22 +29,20 @@ class Qap:
         self.pop_value = np.zeros(self.pop.shape[0])
         for i in range(self.pop_size):
             np.random.shuffle(self.pop[i, :])
-        return
 
     def evaluate(self):
         for i in range(self.pop.shape[0]):
             self.pop_value[i] = (self.distance * ((self.flow[self.pop[i], :])[:, self.pop[i]])).sum()
-        return
 
     def isDone(self, t):
         return t > self.gen
 
+
     def mutation(self):
-        for pos in range(self.pop.shape[0]):
-            if(np.random.random() < self.p_m):
-                a, b = np.random.randint(0, self.pop.shape[1], 2)
-                self.pop[pos][[a, b]] = self.pop[pos][[b, a]]
-        return None
+        mutants = np.nonzero(np.random.rand(self.pop.shape[0], self.pop.shape[1]) < self.p_m)
+        for ind in range(mutants[0].shape[0]):
+            r = np.random.randint(0, self.pop.shape[1])
+            self.pop[ind][[mutants[1][ind], r]] = self.pop[ind][[r, mutants[1][ind]]]
 
     def main(self):
         t = 0
@@ -57,7 +52,7 @@ class Qap:
 
         while not self.isDone(t):
             #print(np.min(self.pop_value))
-            self.selection()
+            self.selection_tournament()
             self.crossover()
             self.mutation()
             self.evaluate()
@@ -65,16 +60,14 @@ class Qap:
                 i = np.argmin(self.pop_value)
                 self.best_unit = self.pop[i], self.pop_value[i]
             t += 1
-        return
 
-    def selection(self):
+    def selection_tournament(self):
         acc = np.zeros(self.pop.shape, dtype=int)
         indices = np.arange(self.pop.shape[0])
         for i in indices:
             units = np.random.choice(indices, self.Tour, False)
             acc[i] = self.pop[units[np.argmin(self.pop_value[units])]]
         self.pop = acc
-        return
 
     def crossover(self):
         pattern = np.arange(self.pop.shape[1])
@@ -93,48 +86,58 @@ class Qap:
                 c = np.concatenate((self.pop[m][0:split], self.pop[f][split : self.pop[m].shape[0]]))
                 repair_unit(c)
                 self.pop[pairs[i, child]] = c
-        return
 
     def result(self):
         print('Best: ' + str(self.best_unit[0]+1) + '\t==>\t' + str(self.best_unit[1]))
-        return
 
-test_flow_matrix = np.array([[0, 3, 0, 2],
-                        [3, 0, 0, 1],
-                        [0, 0, 0, 4],
-                        [2, 1, 4, 0]])
-
-test_distance_matrix = np.array([[0, 22, 53, 53],
-                            [22, 0, 40, 62],
-                            [53, 40, 0, 55],
-                            [53, 62, 55, 0]])
-
-x = np.loadtxt('data/flow_12.txt').astype(int)
-y = np.loadtxt('data/distance_12.txt').astype(int)
-
-data = []
-data.append((np.loadtxt('data/flow_12.txt').astype(int), np.loadtxt('data/distance_12.txt').astype(int)))
-data.append((np.loadtxt('data/flow_14.txt').astype(int), np.loadtxt('data/distance_14.txt').astype(int)))
-data.append((np.loadtxt('data/flow_16.txt').astype(int), np.loadtxt('data/distance_16.txt').astype(int)))
-data.append((np.loadtxt('data/flow_18.txt').astype(int), np.loadtxt('data/distance_18.txt').astype(int)))
-data.append((np.loadtxt('data/flow_20.txt').astype(int), np.loadtxt('data/distance_20.txt').astype(int)))
 
 def single_run():
+    x = np.loadtxt('data/flow_20.txt').astype(int)
+    y = np.loadtxt('data/distance_20.txt').astype(int)
     start = time.time()
-    test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=0.01, Tour=3)
-    for i in range(1):
+    test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=0.01, Tour=2)
+    buff = []
+    for i in range(20):
         test.main()
         test.result()
-
+        buff.append(test.best_unit[1])
     stop = time.time()
+    print('AVG:  ' + str(np.average(buff)))
+    duration = int(round((stop - start)*1000))
+    print('Duration: ' + str(duration) + ' ms')
+
+def params_selection():       #LAST BEST TOUR 2 AND 5
+                              #LAST BEST P_X  ==> 0.4
+    x = np.loadtxt('data/flow_12.txt').astype(int)
+    y = np.loadtxt('data/distance_12.txt').astype(int)
+    start = time.time()
+    buff1 = []
+    for j in (np.arange(1, 25, 2) / 100):
+        print('\n\n##########\t\tParam: ' + str(j) + '\t\t##############')
+        test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.4, p_m=j, Tour=2)
+        buff2 = []
+        for i in range(50):
+            test.main()
+            test.result()
+            buff2.append(test.best_unit[1])
+        buff1.append((np.average(buff2), j))
+    stop = time.time()
+    for a in buff1:
+        print(a)
     duration = int(round((stop - start)*1000))
     print('Duration: ' + str(duration) + ' ms')
 
 def multi_run():
+    data = []
+    data.append((np.loadtxt('data/flow_12.txt').astype(int), np.loadtxt('data/distance_12.txt').astype(int)))
+    data.append((np.loadtxt('data/flow_14.txt').astype(int), np.loadtxt('data/distance_14.txt').astype(int)))
+    data.append((np.loadtxt('data/flow_16.txt').astype(int), np.loadtxt('data/distance_16.txt').astype(int)))
+    data.append((np.loadtxt('data/flow_18.txt').astype(int), np.loadtxt('data/distance_18.txt').astype(int)))
+    data.append((np.loadtxt('data/flow_20.txt').astype(int), np.loadtxt('data/distance_20.txt').astype(int)))
     for d in data:
         print('\n\n##################### \t N: \t' + str(d[0].shape[0]) + '\t\t########################')
         start = time.time()
-        test = Qap(flow=d[0], distance=d[1], pop_size=200, gen=100, p_x=0.7, p_m=0.01, Tour=4)
+        test = Qap(flow=d[0], distance=d[1], pop_size=100, gen=100, p_x=0.7, p_m=0.01, Tour=5)
         buff = 0
         for i in range(10):
             test.main()
@@ -145,4 +148,4 @@ def multi_run():
         duration = int(round((stop - start) * 1000))
         print('Duration: ' + str(duration) + ' ms')
 
-multi_run()
+single_run()
