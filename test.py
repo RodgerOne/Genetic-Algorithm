@@ -34,9 +34,33 @@ def calculateCost(permutation, distance, flow):
             cost += flow[i][j] * distance[int(permutation[i])][int(permutation[j])]
     return cost
 
+def crossover(a,b):
+    pattern = np.arange(a.shape[0])
+    def repair_unit(unit):
+        indices = np.setdiff1d(pattern, np.unique(unit, return_index=True)[1])
+        unit[indices] = np.setdiff1d(pattern, unit)
+        return
+    repair_unit(a)
+    repair_unit(b)
+    print('Parent_1: ' + str(a))
+    print('Parent_2: ' + str(b))
+
+    split = np.random.randint(a.shape[0])
+    print('Split: ' + str(split))
+    c = np.concatenate((a[0:split], b[split : a.shape[0]]))
+    print(c)
+    repair_unit(c)
+    print(c)
+    return
+
+indices = np.arange(18)
+units = np.random.choice(indices, 5, False)
 
 x = np.loadtxt('data/flow_12.txt').astype(int)
 y = np.loadtxt('data/distance_12.txt').astype(int)
 z = np.array([3,10,11,2,12,5,6,7,8,1,4,9])
 
-print(calculateCost(z, y, x))
+
+s = np.random.randint(0,6,6)
+d = np.random.randint(0,6,6)
+print(units)
