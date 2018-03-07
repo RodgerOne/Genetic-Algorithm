@@ -43,7 +43,7 @@ class Qap:
 
     def mutation(self):
         mutants = np.nonzero(np.random.rand(self.pop.shape[0], self.pop.shape[1]) < self.p_m)
-        for ind in range(mutants[0].shape[0]):
+        for ind in range(mutants[0].shape[0]-1):
             r = np.random.randint(0, self.pop.shape[1])
             self.pop[ind][[mutants[1][ind], r]] = self.pop[ind][[r, mutants[1][ind]]]
 
@@ -126,12 +126,12 @@ def single_run_charts(number, tour=None):
     test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=0.01, tour=tour)
     buff = []
     graph = np.zeros(test.stat.shape)
-    for i in range(10):
+    for i in range(100):
         test.main()
         graph += test.stat
         test.result()
         buff.append(test.best_unit[1])
-    graph /= 10
+    graph /= 100
     stop = time.time()
     print('AVG of Bests:  ' + str(np.average(buff)))
     duration = int(round((stop - start)*1000))
@@ -143,9 +143,9 @@ def single_run_charts(number, tour=None):
     max = graph[:, 2]
 
     fig, ax = plt.subplots()
-    ax.plot(x_axis, min, 'k:', label='Min')
-    ax.plot(x_axis, avg, 'k', label='Avg')
-    ax.plot(x_axis, max, 'k--', label='Max')
+    ax.plot(x_axis, min, 'g', label='Min')
+    ax.plot(x_axis, avg, 'y', label='Avg')
+    ax.plot(x_axis, max, 'r', label='Max')
 
     legend = ax.legend(loc='upper right', shadow=True, fontsize='x-large')
     legend.get_frame().set_facecolor('#EEEEEE')
@@ -157,12 +157,12 @@ def params_selection():
     y = np.loadtxt('data/distance_12.txt').astype(int)
     start = time.time()
     buff1 = []
-    x_axis = np.arange(1, 20, 1)
+    x_axis = np.arange(1, 100, 5) / 1000
     for j in x_axis:                # zalezy od parametru
         print('\n\n##########\t\tParam: ' + str(j) + '\t\t##############')
-        test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=0.01, tour=j)
+        test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=j, tour=5)
         buff2 = []
-        for i in range(50):
+        for i in range(100):
             test.main()
             #test.result()
             buff2.append(test.best_unit[1])
@@ -174,7 +174,7 @@ def params_selection():
     y_axis = buff1
 
     fig, ax = plt.subplots()
-    ax.plot(x_axis, y_axis, 'k', label='Avg')
+    ax.plot(x_axis, y_axis, 'g', label='Avg')
 
     legend = ax.legend(loc='upper right', shadow=True, fontsize='x-large')
     legend.get_frame().set_facecolor('#EEEEEE')
