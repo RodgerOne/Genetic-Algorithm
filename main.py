@@ -43,9 +43,9 @@ class Qap:
 
     def mutation(self):
         mutants = np.nonzero(np.random.rand(self.pop.shape[0], self.pop.shape[1]) < self.p_m)
-        for ind in range(mutants[0].shape[0]-1):
+        for ind in range(mutants[0].shape[0]):
             r = np.random.randint(0, self.pop.shape[1])
-            self.pop[ind][[mutants[1][ind], r]] = self.pop[ind][[r, mutants[1][ind]]]
+            self.pop[mutants[0][ind]][[mutants[1][ind], r]] = self.pop[mutants[0][ind]][[r, mutants[1][ind]]]
 
     def main(self):
         t = 0
@@ -157,7 +157,7 @@ def params_selection():
     y = np.loadtxt('data/distance_12.txt').astype(int)
     start = time.time()
     buff1 = []
-    x_axis = np.arange(1, 100, 5) / 1000
+    x_axis = np.arange(0, 100, 5) / 1000
     for j in x_axis:                # zalezy od parametru
         print('\n\n##########\t\tParam: ' + str(j) + '\t\t##############')
         test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=j, tour=5)
