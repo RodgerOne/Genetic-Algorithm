@@ -24,7 +24,7 @@ class Qap:
         self.pop = None
         self.pop_value = None
         self.best_unit = None
-        self.stat = np.zeros((pop_size, 3))
+        self.stat = np.zeros((gen, 3))
         self.initialise()
 
     def initialise(self):
@@ -102,6 +102,29 @@ class Qap:
     def result(self):
         print('Best: ' + str(self.best_unit[0]+1) + '\t==>\t' + str(self.best_unit[1]))
 
+class RandomSearch:
+    def __init__(self, distance, flow, pop_size):
+        self.distance = distance
+        self.flow = flow
+        self.pop_size = pop_size
+        self.pop = None
+        self.pop_value = None
+
+    def initialise(self):
+        self.pop = np.ones((self.pop_size, 1), dtype=int) * np.array(range(self.flow.shape[1]))
+        self.pop_value = np.zeros(self.pop.shape[0])
+        for i in range(self.pop_size):
+            np.random.shuffle(self.pop[i, :])
+
+    def evaluate(self):
+        for i in range(self.pop.shape[0]):
+            self.pop_value[i] = (self.distance * ((self.flow[self.pop[i], :])[:, self.pop[i]])).sum()
+
+    def run_random(self):
+        self.initialise()
+        self.evaluate()
+        print('Best: ' + str(self.pop[np.argmin(self.pop_value)]) + '\t==>\t' + str(np.min(self.pop_value)))
+
 
 def single_run(tour = None):
     x = np.loadtxt('data/flow_20.txt').astype(int)
@@ -126,17 +149,17 @@ def single_run_charts(number, tour=None):
     test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=0.01, tour=tour)
     buff = []
     graph = np.zeros(test.stat.shape)
-    for i in range(100):
+    for i in range(50):
         test.main()
         graph += test.stat
         test.result()
         buff.append(test.best_unit[1])
-    graph /= 100
+    graph /= 50
     stop = time.time()
     print('AVG of Bests:  ' + str(np.average(buff)))
     duration = int(round((stop - start)*1000))
     print('Duration: ' + str(duration) + ' ms')
-
+    print('AVG Duration: ' + str(duration /50) + ' ms')
     x_axis = np.arange(graph.shape[0])
     min = graph[:, 0]
     avg = graph[:, 1]
@@ -157,12 +180,12 @@ def params_selection():
     y = np.loadtxt('data/distance_12.txt').astype(int)
     start = time.time()
     buff1 = []
-    x_axis = np.arange(0, 100, 5) / 1000
+    x_axis = np.arange(50, 400, 50)
     for j in x_axis:                # zalezy od parametru
         print('\n\n##########\t\tParam: ' + str(j) + '\t\t##############')
-        test = Qap(flow=x, distance=y, pop_size=100, gen=100, p_x=0.7, p_m=j, tour=5)
+        test = Qap(flow=x, distance=y, pop_size=100, gen=j, p_x=0.7, p_m=0.01, tour=5)
         buff2 = []
-        for i in range(100):
+        for i in range(75):
             test.main()
             #test.result()
             buff2.append(test.best_unit[1])
@@ -201,4 +224,12 @@ def multi_run(tour = None):
         duration = int(round((stop - start) * 1000))
         print('Duration: ' + str(duration) + ' ms')
 
-params_selection()
+
+#single_run_charts(12, 5)
+f, d = (np.loadtxt('data/flow_12.txt').astype(int), np.loadtxt('data/distance_12.txt').astype(int))
+start = time.time()
+test = RandomSearch(f, d, 1000)
+test.run_random()
+stop = time.time()
+duration = int(round((stop - start) * 1000))
+print('Duration: ' + str(duration) + ' ms')
